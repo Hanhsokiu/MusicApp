@@ -4,286 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Music App - Premium</title>
-
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-  <style>
-    :root {
-      --bg-base: #121212;
-      --bg-panel: #181818;
-      --bg-hover: #282828;
-      --primary-color: #1db954;
-      --text-main: #ffffff;
-      --text-muted: #b3b3b3;
-    }
-
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    body {
-      font-family: 'Poppins', sans-serif;
-      background-color: var(--bg-base);
-      color: var(--text-main);
-      display: flex;
-      height: 100vh;
-      overflow: hidden;
-    }
-
-    /* --- SIDEBAR --- */
-    .sidebar {
-      width: 240px;
-      background-color: #000000;
-      display: flex;
-      flex-direction: column;
-      padding: 24px 12px;
-    }
-
-    .logo {
-      font-size: 24px;
-      font-weight: 600;
-      padding: 0 12px;
-      margin-bottom: 30px;
-      color: var(--text-main);
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .nav-btn {
-      background: transparent;
-      border: none;
-      color: var(--text-muted);
-      padding: 12px;
-      text-align: left;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      border-radius: 5px;
-      transition: all 0.3s ease;
-      display: flex;
-      align-items: center;
-      gap: 15px;
-      font-family: 'Poppins', sans-serif;
-    }
-
-    .nav-btn:hover, .nav-btn.active {
-      color: var(--text-main);
-      background-color: var(--bg-hover);
-    }
-
-    /* --- MAIN CONTENT --- */
-    .main-content {
-      flex: 1;
-      background: linear-gradient(180deg, #2a2a2a 0%, var(--bg-base) 100%);
-      padding: 30px;
-      overflow-y: auto;
-      padding-bottom: 100px; /* Tránh bị che bởi player */
-    }
-
-    .header-title {
-      font-size: 28px;
-      font-weight: 600;
-      margin-bottom: 20px;
-    }
-
-    /* --- UPLOAD SECTION --- */
-    .upload-box {
-      background-color: rgba(24, 24, 24, 0.8);
-      padding: 20px;
-      border-radius: 12px;
-      margin-bottom: 30px;
-      display: flex;
-      gap: 15px;
-      align-items: center;
-      flex-wrap: wrap;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-    }
-
-    .upload-box input[type="text"] {
-      background: var(--bg-hover);
-      border: 1px solid transparent;
-      color: white;
-      padding: 10px 15px;
-      border-radius: 8px;
-      outline: none;
-      font-family: 'Poppins', sans-serif;
-      transition: 0.2s;
-    }
-
-    .upload-box input[type="text"]:focus {
-      border-color: var(--primary-color);
-    }
-
-    .upload-box input[type="file"] {
-      color: var(--text-muted);
-    }
-
-    .upload-box input[type="file"]::file-selector-button {
-      background: var(--bg-hover);
-      color: white;
-      border: none;
-      padding: 8px 12px;
-      border-radius: 5px;
-      cursor: pointer;
-      margin-right: 10px;
-      font-family: 'Poppins', sans-serif;
-    }
-
-    .btn-upload {
-      background-color: var(--primary-color);
-      color: black;
-      font-weight: 600;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 20px;
-      cursor: pointer;
-      transition: transform 0.2s;
-    }
-
-    .btn-upload:hover {
-      transform: scale(1.05);
-      background-color: #1ed760;
-    }
-
-    /* --- SONG LIST --- */
-    .song-list {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: 24px;
-    }
-
-    .song-card {
-      background-color: var(--bg-panel);
-      padding: 16px;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-      position: relative;
-    }
-
-    .song-card:hover {
-      background-color: var(--bg-hover);
-    }
-
-    .song-cover {
-      width: 100%;
-      aspect-ratio: 1/1;
-      background-color: #333;
-      border-radius: 6px;
-      margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 40px;
-      color: var(--text-muted);
-      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-    }
-
-    .song-title {
-      font-weight: 600;
-      font-size: 16px;
-      margin-bottom: 4px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .song-artist {
-      color: var(--text-muted);
-      font-size: 14px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .play-btn-circle {
-      position: absolute;
-      right: 16px;
-      top: 140px;
-      width: 48px;
-      height: 48px;
-      background-color: var(--primary-color);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: black;
-      font-size: 20px;
-      border: none;
-      cursor: pointer;
-      opacity: 0;
-      transform: translateY(8px);
-      transition: all 0.3s ease;
-      box-shadow: 0 8px 8px rgba(0,0,0,0.3);
-    }
-
-    .song-card:hover .play-btn-circle {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    /* --- PLAYER BAR --- */
-    .player-bar {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      height: 90px;
-      background-color: #181818;
-      border-top: 1px solid #282828;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0 20px;
-      z-index: 1000;
-    }
-
-    /* Customizing default audio tag a bit */
-    audio {
-      width: 60%;
-      height: 40px;
-      outline: none;
-    }
-
-    /* Scrollbar */
-    ::-webkit-scrollbar { width: 8px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #555; border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: #888; }
-    /* --- SEARCH BOX --- */
-    .search-box {
-      position: relative;
-      margin-bottom: 30px;
-      max-width: 400px;
-    }
-
-    .search-box input {
-      width: 100%;
-      background-color: #242424;
-      border: 1px solid transparent;
-      color: white;
-      padding: 12px 20px 12px 45px; /* Chừa chỗ cho icon kính lúp */
-      border-radius: 25px;
-      font-family: 'Poppins', sans-serif;
-      font-size: 15px;
-      transition: all 0.3s ease;
-    }
-
-    .search-box input:focus {
-      background-color: #2a2a2a;
-      border-color: white;
-      outline: none;
-    }
-
-    .search-icon {
-      position: absolute;
-      left: 15px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--text-muted);
-      font-size: 18px;
-    }
-  </style>
+  <link rel="stylesheet" href="/static/style.css">
 </head>
 
 <body>
@@ -317,8 +40,10 @@
       <input type="text" id="title" placeholder="Tên bài hát">
       <input type="text" id="artist" placeholder="Tên ca sĩ">
       <input type="file" id="file" accept=".mp3,.wav">
+      <input type="file" id="image" accept="image/*">
       <button class="btn-upload" onclick="upload()">Tải lên ngay</button>
     </div>
+
 
     <h2 class="header-title">Danh sách bài hát</h2>
 
@@ -331,103 +56,31 @@
     <audio id="player" controls controlsList="nodownload"></audio>
   </div>
 
- <script>
-    const API_URL = "http://127.0.0.1:5000";
 
-    // 1. Hàm vẽ giao diện thẻ bài hát (tái sử dụng)
-    function renderSongs(data) {
-      const list = document.getElementById("list");
-      list.innerHTML = "";
 
-      if (data.length === 0) {
-        list.innerHTML = `<p style="color: var(--text-muted); margin-top: 10px;">Không tìm thấy bài hát nào phù hợp.</p>`;
-        return;
-      }
+  <!-- EDIT MODAL -->
+<div id="editModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:2000; justify-content:center; align-items:center;">
 
-      data.forEach(song => {
-        const card = document.createElement("div");
-        card.className = "song-card";
+  <div style="background:#181818; padding:25px; border-radius:10px; width:400px;">
+    <h3 style="margin-bottom:15px;">✏️ Sửa bài hát</h3>
 
-        card.innerHTML = `
-          <div class="song-cover">
-            <i class="fas fa-music"></i>
-          </div>
-          <div class="song-title" title="${song.title}">${song.title}</div>
-          <div class="song-artist" title="${song.artist}">${song.artist}</div>
-          <button class="play-btn-circle" onclick="play('${song.fileUrl}')">
-            <i class="fas fa-play"></i>
-          </button>
-        `;
-        list.appendChild(card);
-      });
-    }
+    <input type="text" id="editTitle" placeholder="Tên bài hát" style="width:100%; margin-bottom:10px; padding:10px;">
+    <input type="text" id="editArtist" placeholder="Tên ca sĩ" style="width:100%; margin-bottom:10px; padding:10px;">
 
-    // 2. Hàm Load toàn bộ bài hát
-    function loadSongs() {
-      fetch(API_URL + "/api/songs")
-        .then(res => res.json())
-        .then(data => renderSongs(data))
-        .catch(err => console.error("Lỗi tải danh sách:", err));
-    }
+    <label>File nhạc mới:</label>
+    <input type="file" id="editFile" style="margin-bottom:10px;">
 
-    // 3. Hàm Tìm kiếm thời gian thực (Gọi API bạn đã viết)
-    function searchSongs() {
-      const query = document.getElementById("searchInput").value;
+    <label>Ảnh mới:</label>
+    <input type="file" id="editImage" style="margin-bottom:15px;">
 
-      // Nếu xóa trắng ô tìm kiếm, gọi lại toàn bộ bài hát
-      if (query.trim() === "") {
-        loadSongs();
-        return;
-      }
+    <div style="display:flex; justify-content:space-between;">
+      <button onclick="submitEdit()" style="background:#1db954; padding:10px 15px; border:none; border-radius:5px;">Lưu</button>
+      <button onclick="closeModal()" style="background:#444; padding:10px 15px; border:none; border-radius:5px;">Hủy</button>
+    </div>
+  </div>
 
-      // Gửi request tới API tìm kiếm
-      fetch(API_URL + "/api/songs/search?q=" + encodeURIComponent(query))
-        .then(res => res.json())
-        .then(data => renderSongs(data))
-        .catch(err => console.error("Lỗi tìm kiếm:", err));
-    }
+</div>
 
-    // 4. Hàm Upload
-    function upload() {
-      const file = document.getElementById("file").files[0];
-      const title = document.getElementById("title").value;
-      const artist = document.getElementById("artist").value;
-
-      if (!file || !title || !artist) {
-        alert("Vui lòng điền đủ tên, ca sĩ và chọn file nhạc!");
-        return;
-      }
-
-      const formData = new FormData();
-      formData.append("song", file);
-      formData.append("title", title);
-      formData.append("artist", artist);
-
-      fetch(API_URL + "/api/songs", {
-        method: "POST",
-        body: formData
-      })
-      .then(res => res.json())
-      .then(() => {
-        alert("Upload thành công!");
-        document.getElementById("title").value = "";
-        document.getElementById("artist").value = "";
-        document.getElementById("file").value = "";
-        loadSongs(); // Tải lại danh sách sau khi up
-      })
-      .catch(err => console.error("Lỗi upload:", err));
-    }
-
-    // 5. Hàm Play nhạc
-    function play(url) {
-      const player = document.getElementById("player");
-      player.src = API_URL + url;
-      player.play();
-    }
-
-    // Khởi chạy khi tải trang
-    window.onload = loadSongs;
-  </script>
-
+ <script src="/static/script.js"></script>
 </body>
 </html>
