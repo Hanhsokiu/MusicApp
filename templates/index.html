@@ -10,99 +10,91 @@
 </head>
 
 <body>
-
   <div class="sidebar">
-  <div class="logo">
-    <i class="fab fa-spotify" style="color: var(--primary-color); font-size: 32px;"></i>
-    MusicAPI
-  </div>
+    <div class="logo">
+      <i class="fab fa-spotify" style="color: var(--primary-color); font-size: 32px;"></i>
+      MusicAPI
+    </div>
 
-  <button class="nav-btn active" onclick="loadSongs()">
-    <i class="fas fa-home"></i> Trang chủ
-  </button>
-
-  <button class="nav-btn">
-    <i class="fas fa-search"></i> Tìm kiếm
-  </button>
-
-  <!-- 📚 THƯ VIỆN -->
-  <button class="nav-btn" onclick="toggleLibrary()">
-    <i class="fas fa-book"></i> Thư viện
-  </button>
-
-  <!-- 👇 MENU CON -->
-  <div id="libraryMenu" style="display:none; margin-left:15px;">
-    <button class="nav-btn" onclick="loadFavorites()">
-      <i class="fas fa-heart"></i> Yêu thích
+    <button class="nav-btn active" onclick="loadSongs()">
+      <i class="fas fa-home"></i> Trang chu
     </button>
 
-    <button class="nav-btn" onclick="loadRecent()">
-      <i class="fas fa-clock"></i> Gần đây
+    <button class="nav-btn">
+      <i class="fas fa-search"></i> Tim kiem
     </button>
+
+    <button class="nav-btn" onclick="toggleLibrary()">
+      <i class="fas fa-book"></i> Thu vien
+    </button>
+
+    <div id="libraryMenu" style="display:none; margin-left:15px;">
+      <button class="nav-btn" onclick="loadFavorites()">
+        <i class="fas fa-heart"></i> Yeu thich
+      </button>
+
+      <button class="nav-btn" onclick="loadRecent()">
+        <i class="fas fa-clock"></i> Gan day
+      </button>
+
+      <button class="nav-btn" onclick="loadPlaylists()">
+        <i class="fas fa-list"></i> Playlist
+      </button>
+    </div>
   </div>
-
-</div>
-
-
 
   <div class="main-content">
+    <div class="user-bar">
+      <span id="userName"></span>
+      <span id="userRole" class="role-badge"></span>
+      <button class="nav-btn" onclick="logout()">
+        <i class="fas fa-sign-out-alt"></i> Dang xuat
+      </button>
+    </div>
 
-
-     <div class="user-bar">
-  <span id="userName"></span>
-  <span id="userRole" class="role-badge"></span>
-  <button class="nav-btn" onclick="logout()">
-  <i class="fas fa-sign-out-alt"></i> Đăng xuất
-</button>
-
-
-</div>
     <div class="search-box">
-          <i class="fas fa-search search-icon"></i>
-          <input type="text" id="searchInput" placeholder="Bạn muốn nghe bài gì hôm nay?" oninput="searchSongs()">
+      <i class="fas fa-search search-icon"></i>
+      <input type="text" id="searchInput" placeholder="Ban muon nghe bai gi hom nay?" oninput="searchSongs()">
     </div>
 
     <button class="nav-btn" onclick="goToUpload()">
-  <i class="fas fa-cloud-upload-alt"></i> Tải nhạc
-</button>
+      <i class="fas fa-cloud-upload-alt"></i> Tai nhac
+    </button>
 
+    <div class="section-head">
+      <h2 class="header-title" id="sectionTitle">Danh sach bai hat</h2>
+      <button class="nav-btn section-action" id="createPlaylistBtn" onclick="createPlaylist()" style="display:none;">
+        <i class="fas fa-plus"></i> Tao playlist
+      </button>
+    </div>
 
-    <h2 class="header-title">Danh sách bài hát</h2>
-
-    <div class="song-list" id="list">
-      </div>
-
+    <div class="song-list" id="list"></div>
   </div>
 
   <div class="player-bar">
     <audio id="player" controls controlsList="nodownload"></audio>
   </div>
 
+  <div id="editModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:2000; justify-content:center; align-items:center;">
+    <div style="background:#181818; padding:25px; border-radius:10px; width:400px;">
+      <h3 style="margin-bottom:15px;">Sua bai hat</h3>
 
+      <input type="text" id="editTitle" placeholder="Ten bai hat" style="width:100%; margin-bottom:10px; padding:10px;">
+      <input type="text" id="editArtist" placeholder="Ten ca si" style="width:100%; margin-bottom:10px; padding:10px;">
 
-  <!-- EDIT MODAL -->
-<div id="editModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:2000; justify-content:center; align-items:center;">
+      <label>File nhac moi:</label>
+      <input type="file" id="editFile" style="margin-bottom:10px;">
 
-  <div style="background:#181818; padding:25px; border-radius:10px; width:400px;">
-    <h3 style="margin-bottom:15px;">✏️ Sửa bài hát</h3>
+      <label>Anh moi:</label>
+      <input type="file" id="editImage" style="margin-bottom:15px;">
 
-    <input type="text" id="editTitle" placeholder="Tên bài hát" style="width:100%; margin-bottom:10px; padding:10px;">
-    <input type="text" id="editArtist" placeholder="Tên ca sĩ" style="width:100%; margin-bottom:10px; padding:10px;">
-
-    <label>File nhạc mới:</label>
-    <input type="file" id="editFile" style="margin-bottom:10px;">
-
-    <label>Ảnh mới:</label>
-    <input type="file" id="editImage" style="margin-bottom:15px;">
-
-    <div style="display:flex; justify-content:space-between;">
-      <button onclick="submitEdit()" style="background:#1db954; padding:10px 15px; border:none; border-radius:5px;">Lưu</button>
-      <button onclick="closeModal()" style="background:#444; padding:10px 15px; border:none; border-radius:5px;">Hủy</button>
+      <div style="display:flex; justify-content:space-between;">
+        <button onclick="submitEdit()" style="background:#1db954; padding:10px 15px; border:none; border-radius:5px;">Luu</button>
+        <button onclick="closeModal()" style="background:#444; padding:10px 15px; border:none; border-radius:5px;">Huy</button>
+      </div>
     </div>
   </div>
 
-</div>
-
- <script src="/static/script.js"></script>
+  <script src="/static/script.js"></script>
 </body>
 </html>

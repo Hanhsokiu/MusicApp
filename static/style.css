@@ -399,3 +399,67 @@ audio{
 .fav-btn.active i {
   color: red;
 }
+
+.song-meta-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.section-action {
+  color: var(--text-main);
+  background-color: var(--bg-hover);
+}
+
+.playlist-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 24px;
+}
+
+.playlist-card {
+  background: linear-gradient(180deg, rgba(29, 185, 84, 0.16), rgba(24, 24, 24, 0.96));
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.playlist-icon {
+  width: 54px;
+  height: 54px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 22px;
+}
+
+.playlist-name {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.playlist-count {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.playlist-open-btn {
+  background: var(--primary-color);
+  color: black;
+  font-weight: 600;
+  margin-top: auto;
+}
