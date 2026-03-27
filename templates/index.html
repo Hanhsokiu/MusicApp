@@ -12,37 +12,59 @@
 <body>
 
   <div class="sidebar">
-    <div class="logo">
-      <i class="fab fa-spotify" style="color: var(--primary-color); font-size: 32px;"></i>
-      MusicAPI
-    </div>
+  <div class="logo">
+    <i class="fab fa-spotify" style="color: var(--primary-color); font-size: 32px;"></i>
+    MusicAPI
+  </div>
 
-    <button class="nav-btn active" onclick="loadSongs()">
-      <i class="fas fa-home"></i> Trang chủ
+  <button class="nav-btn active" onclick="loadSongs()">
+    <i class="fas fa-home"></i> Trang chủ
+  </button>
+
+  <button class="nav-btn">
+    <i class="fas fa-search"></i> Tìm kiếm
+  </button>
+
+  <!-- 📚 THƯ VIỆN -->
+  <button class="nav-btn" onclick="toggleLibrary()">
+    <i class="fas fa-book"></i> Thư viện
+  </button>
+
+  <!-- 👇 MENU CON -->
+  <div id="libraryMenu" style="display:none; margin-left:15px;">
+    <button class="nav-btn" onclick="loadFavorites()">
+      <i class="fas fa-heart"></i> Yêu thích
     </button>
-    <button class="nav-btn">
-      <i class="fas fa-search"></i> Tìm kiếm
-    </button>
-    <button class="nav-btn">
-      <i class="fas fa-book"></i> Thư viện
+
+    <button class="nav-btn" onclick="loadRecent()">
+      <i class="fas fa-clock"></i> Gần đây
     </button>
   </div>
 
+</div>
+
+
+
   <div class="main-content">
 
+
+     <div class="user-bar">
+  <span id="userName"></span>
+  <span id="userRole" class="role-badge"></span>
+  <button class="nav-btn" onclick="logout()">
+  <i class="fas fa-sign-out-alt"></i> Đăng xuất
+</button>
+
+
+</div>
     <div class="search-box">
           <i class="fas fa-search search-icon"></i>
           <input type="text" id="searchInput" placeholder="Bạn muốn nghe bài gì hôm nay?" oninput="searchSongs()">
     </div>
 
-    <div class="upload-box">
-      <h3 style="width: 100%; margin-bottom: 10px; font-size: 18px;"><i class="fas fa-cloud-upload-alt"></i> Upload bài hát mới</h3>
-      <input type="text" id="title" placeholder="Tên bài hát">
-      <input type="text" id="artist" placeholder="Tên ca sĩ">
-      <input type="file" id="file" accept=".mp3,.wav">
-      <input type="file" id="image" accept="image/*">
-      <button class="btn-upload" onclick="upload()">Tải lên ngay</button>
-    </div>
+    <button class="nav-btn" onclick="goToUpload()">
+  <i class="fas fa-cloud-upload-alt"></i> Tải nhạc
+</button>
 
 
     <h2 class="header-title">Danh sách bài hát</h2>

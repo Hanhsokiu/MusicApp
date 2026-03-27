@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Đăng ký</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #121212, #1db954);
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+    }
+
+    .card {
+      background: #181818;
+      padding: 40px;
+      border-radius: 16px;
+      width: 350px;
+      text-align: center;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 15px;
+      border-radius: 10px;
+      border: none;
+      background: #2a2a2a;
+      color: white;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      border-radius: 30px;
+      border: none;
+      background: #1db954;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #1ed760;
+    }
+
+    .link {
+      margin-top: 10px;
+      cursor: pointer;
+      color: #aaa;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="card">
+  <h2>📝 Đăng ký</h2>
+
+  <input type="text" id="username" placeholder="Username">
+  <input type="password" id="password" placeholder="Password">
+
+  <button onclick="register()">Đăng ký</button>
+
+  <div class="link" onclick="goLogin()">Đã có tài khoản? Đăng nhập</div>
+</div>
+
+<script>
+const API_URL = "http://127.0.0.1:5000";
+
+function register() {
+  const username = document.getElementById("username").value;
+  const password = document.getElementById("password").value;
+
+  if (!username || !password) {
+    alert("Nhập đầy đủ!");
+    return;
+  }
+
+  fetch(API_URL + "/api/register", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ username, password })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.message) {
+      alert("Đăng ký thành công!");
+      window.location.href = "/login";
+    } else {
+      alert(data.error);
+    }
+  });
+}
+
+function goLogin() {
+  window.location.href = "/login";
+}
+</script>
+
+</body>
+</html>

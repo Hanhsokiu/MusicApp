@@ -316,3 +316,86 @@
 .btn:active {
   transform: scale(0.95);
 }
+
+.user-bar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.role-badge {
+  background: #1db954;
+  color: black;
+  padding: 4px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: bold;
+}
+.player-bar {
+  position: fixed;
+  bottom: 0;
+  left: 240px; /* trừ sidebar */
+  right: 0;
+  height: 80px;
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  z-index: 1000;
+}
+audio{
+    margin-right:20%;
+}
+#player {
+  width: 60%;
+  max-width: 700px;
+  height: 40px;
+  border-radius: 30px;
+  background: linear-gradient(90deg, #2b2b3c, #3a3a55);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+#player::-webkit-media-controls-panel {
+  background: transparent;
+}
+
+
+#player::-webkit-media-controls-current-time-display,
+#player::-webkit-media-controls-time-remaining-display {
+  font-size: 12px;
+}
+
+#player::-webkit-media-controls-timeline {
+  filter: brightness(1.2);
+}
+
+#player::-webkit-media-controls-volume-slider {
+  filter: invert(1);
+}
+#libraryMenu .nav-btn {
+  font-size: 14px;
+  padding-left: 25px;
+  opacity: 0.8;
+}
+
+#libraryMenu .nav-btn:hover {
+  opacity: 1;
+}
+.fav-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+}
+
+/* chưa thích → viền trắng */
+.fav-btn i {
+  color: white;
+}
+
+/* đã thích → đỏ */
+.fav-btn.active i {
+  color: red;
+}

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Đăng nhập</title>
+
+  <!-- Font + Icon -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #121212, #1db954);
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+    }
+
+    .login-card {
+      background: #181818;
+      padding: 40px;
+      border-radius: 16px;
+      width: 350px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+      text-align: center;
+      animation: fadeIn 0.5s ease;
+    }
+
+    .login-card h2 {
+      margin-bottom: 25px;
+    }
+
+    .input-group {
+      position: relative;
+      margin-bottom: 20px;
+      margin-right:50px;
+    }
+
+    .input-group i {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #aaa;
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 12px 12px 12px 40px;
+      border-radius: 10px;
+      border: none;
+      background: #2a2a2a;
+      color: white;
+      outline: none;
+    }
+
+    .input-group input:focus {
+      border: 1px solid #1db954;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 12px;
+      border-radius: 30px;
+      border: none;
+      background: #1db954;
+      color: black;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+      margin-top: 10px;
+    }
+
+    .btn:hover {
+      transform: scale(1.05);
+      background: #1ed760;
+    }
+
+    .link {
+      margin-top: 15px;
+      font-size: 14px;
+      color: #aaa;
+      cursor: pointer;
+    }
+
+    .link:hover {
+      color: white;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px);}
+      to { opacity: 1; transform: translateY(0);}
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="login-card">
+  <h2>🎧 Đăng nhập</h2>
+
+  <div class="input-group">
+    <i class="fas fa-user"></i>
+    <input type="text" id="username" placeholder="Username">
+  </div>
+
+  <div class="input-group">
+    <i class="fas fa-lock"></i>
+    <input type="password" id="password" placeholder="Password">
+  </div>
+
+  <button class="btn" onclick="login()">Đăng nhập</button>
+
+  <div class="link" onclick="goRegister()">
+    Chưa có tài khoản? Đăng ký
+  </div>
+</div>
+
+<script>
+const API_URL = "http://127.0.0.1:5000";
+
+// LOGIN
+function login() {
+  const username = document.getElementById("username").value;
+  const password = document.getElementById("password").value;
+
+  if (!username || !password) {
+    alert("Vui lòng nhập đầy đủ!");
+    return;
+  }
+
+  fetch(API_URL + "/api/login", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ username, password })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.user) {
+      localStorage.setItem("user", JSON.stringify(data.user));
+      alert("Đăng nhập thành công!");
+
+      // chuyển về trang chính
+      window.location.href = "/";
+    } else {
+      alert(data.error);
+    }
+  })
+  .catch(err => console.error(err));
+}
+
+// chuyển sang register
+function goRegister() {
+  window.location.href = "/register";
+}
+</script>
+
+</body>
+</html>

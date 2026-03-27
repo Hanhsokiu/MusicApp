@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Upload bài hát</title>
+  <link rel="stylesheet" href="/static/style.css">
+    <style>
+.upload-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+/* Card form */
+.upload-card {
+  background: rgba(24, 24, 24, 0.95);
+  padding: 30px;
+  border-radius: 16px;
+  width: 400px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  animation: fadeIn 0.5s ease;
+}
+
+.upload-card h2 {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+/* Input */
+.upload-card input[type="text"],
+.upload-card input[type="file"] {
+  width: 100%;
+  padding: 12px 15px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: #2a2a2a;
+  color: white;
+  font-family: 'Poppins', sans-serif;
+  transition: 0.3s;
+}
+
+/* Focus đẹp */
+.upload-card input:focus {
+  border-color: var(--primary-color);
+  outline: none;
+  background: #333;
+}
+
+/* File button */
+.upload-card input[type="file"]::file-selector-button {
+  background: var(--bg-hover);
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  color: white;
+  cursor: pointer;
+  margin-right: 10px;
+}
+
+/* Button upload */
+.upload-card .btn-upload {
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: 30px;
+  font-weight: bold;
+  transition: 0.3s;
+}
+
+.upload-card .btn-upload:hover {
+  transform: scale(1.05);
+}
+
+/* Back button */
+.back-btn {
+  margin-top: 10px;
+  background: #333;
+  border: none;
+  padding: 10px;
+  border-radius: 20px;
+  cursor: pointer;
+  color: white;
+  transition: 0.3s;
+}
+
+.back-btn:hover {
+  background: #555;
+}
+
+/* Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+    </style>
+</head>
+
+<body>
+
+<div class="main-content">
+  <div class="upload-container">
+
+    <div class="upload-card">
+      <h2>🎵 Upload bài hát</h2>
+
+      <input type="text" id="title" placeholder="Tên bài hát">
+      <input type="text" id="artist" placeholder="Tên ca sĩ">
+      <input type="file" id="file" accept=".mp3,.wav">
+      <input type="file" id="image" accept="image/*">
+
+      <button class="btn-upload" onclick="upload()">Tải lên</button>
+      <button class="back-btn" onclick="goHome()">⬅ Quay lại</button>
+    </div>
+
+  </div>
+</div>
+
+<script src="/static/script.js"></script>
+
+</body>
+</html>
