@@ -1,224 +1,420 @@
 const API_URL = "http://127.0.0.1:5000";
 
-// ===== USER =====
 const user = JSON.parse(localStorage.getItem("user"));
+const player = document.getElementById("player");
+const mainPlayBtn = document.getElementById("mainPlayBtn");
+const progressFill = document.getElementById("progressFill");
+const progressWrapper = document.getElementById("progressWrapper");
+const list = document.getElementById("list");
+const viewTitle = document.getElementById("viewTitle");
+const playlistNav = document.getElementById("playlistNav");
+const playerImage = document.getElementById("p-img");
+const playerImageWrapper = document.getElementById("p-img-wrapper");
+
+let currentSongs = [];
+let currentIndex = -1;
+let currentView = "all";
+let selectedPlaylistId = null;
+let selectedPlaylistName = "";
+let editId = null;
 
 if (!user) {
   window.location.href = "/login";
 }
 
-// ===== LOGOUT =====
-function logout() {
-  localStorage.removeItem("user");
-  window.location.href = "/login";
+function fetchJson(url, options = {}) {
+  return fetch(url, {
+    cache: "no-store",
+    ...options,
+    headers: {
+      ...(options.headers || {})
+    }
+  }).then((res) => res.json());
 }
 
-// ===== RENDER =====
-function renderSongs(data) {
-  const list = document.getElementById("list");
-  list.innerHTML = "";
+function escapeHtml(text) {
+  return String(text ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 
-  if (data.length === 0) {
-    list.innerHTML = `<p style="color: var(--text-muted)">Không có bài hát</p>`;
+function escapeJsText(text) {
+  return String(text ?? "")
+    .replace(/\\/g, "\\\\")
+    .replace(/`/g, "\\`");
+}
+
+function setActiveSidebar(buttonId) {
+  document.querySelectorAll(".sidebar .nav-btn").forEach((btn) => btn.classList.remove("active"));
+  if (!buttonId) return;
+  const activeButton = document.getElementById(buttonId);
+  if (activeButton) {
+    activeButton.classList.add("active");
+  }
+}
+
+function setViewTitle(title) {
+  viewTitle.innerText = title;
+}
+
+function setListMode(mode) {
+  list.classList.toggle("playlist-song-list", mode === "playlist");
+}
+
+function setPlayerArtwork(imageUrl) {
+  if (!imageUrl) {
+    playerImage.removeAttribute("src");
+    playerImageWrapper.classList.add("is-placeholder");
     return;
   }
 
-  data.forEach(song => {
-    const card = document.createElement("div");
-    card.className = "song-card";
+  playerImageWrapper.classList.remove("is-placeholder");
+  playerImage.src = API_URL + imageUrl;
+}
 
-    card.innerHTML = `
-      <div class="song-cover">
-        ${
-          song.imageUrl
-            ? `<img src="${API_URL + song.imageUrl}" style="width:100%; height:100%; object-fit:cover; border-radius:6px;">`
-            : `<i class="fas fa-music"></i>`
-        }
-      </div>
+playerImage.addEventListener("error", () => {
+  playerImage.removeAttribute("src");
+  playerImageWrapper.classList.add("is-placeholder");
+});
 
-      <div class="song-title">${song.title}</div>
-      <div class="song-artist">${song.artist}</div>
+function renderSongs(data, mode = "grid") {
+  list.innerHTML = "";
+  currentSongs = data;
+  currentIndex = data.length ? 0 : -1;
+  setListMode(mode);
 
-      <button class="play-btn-circle" onclick="play('${song.fileUrl}', ${song.id})">
-        <i class="fas fa-play"></i>
-      </button>
+  if (!data.length) {
+    list.innerHTML = `<div class="empty-state">${mode === "playlist" ? "Playlist này chưa có bài hát." : "Không có bài hát để hiển thị."}</div>`;
+    return;
+  }
 
-      <button class="fav-btn ${song.isFavorite ? "active" : ""}" onclick="toggleFavorite(${song.id})">
-  <i class="${song.isFavorite ? "fas" : "far"} fa-heart"></i>
-</button>
+  data.forEach((song, index) => {
+    const item = document.createElement("div");
+    item.className = mode === "playlist" ? "playlist-song-row" : "song-card";
 
-      ${
-        user.role === "admin"
-          ? `
-        <div class="song-actions">
-          <button class="btn edit-btn" onclick="editSong(${song.id}, '${song.title}', '${song.artist}')">
-            <i class="fas fa-pen"></i>
+    if (mode === "playlist") {
+      item.innerHTML = `
+        <div class="playlist-song-main" onclick="playByIndex(${index})">
+          <div class="playlist-song-index">${index + 1}</div>
+          <div class="playlist-song-cover">
+            ${song.imageUrl
+              ? `<img src="${API_URL + song.imageUrl}" alt="${escapeHtml(song.title)}">`
+              : `<i class="fas fa-music"></i>`}
+          </div>
+          <div class="playlist-song-info">
+            <div class="playlist-song-title">${escapeHtml(song.title)}</div>
+            <div class="playlist-song-artist">${escapeHtml(song.artist)}</div>
+          </div>
+        </div>
+        <div class="playlist-song-actions">
+          <button class="row-icon-btn" onclick="event.stopPropagation(); playByIndex(${index})">
+            <i class="fas fa-play"></i>
           </button>
-          <button class="btn delete-btn" onclick="deleteSong(${song.id})">
-            <i class="fas fa-trash"></i>
+          <button class="fav-btn ${song.isFavorite ? "active" : ""}" onclick="event.stopPropagation(); toggleFavorite(${song.id})">
+            <i class="${song.isFavorite ? "fas" : "far"} fa-heart"></i>
           </button>
         </div>
-      `
-          : ""
-      }
-    `;
+      `;
+    } else {
+      item.innerHTML = `
+        <div class="song-cover">
+          ${song.imageUrl
+            ? `<img src="${API_URL + song.imageUrl}" style="width:100%; height:100%; object-fit:cover; border-radius:6px;" alt="${escapeHtml(song.title)}">`
+            : `<i class="fas fa-music"></i>`}
+        </div>
+        <div class="song-title">${escapeHtml(song.title)}</div>
+        <div class="song-artist">${escapeHtml(song.artist)}</div>
 
-    list.appendChild(card);
+        <button class="play-btn-circle" onclick="playByIndex(${index})">
+          <i class="fas fa-play"></i>
+        </button>
+
+        <div class="card-bottom-actions">
+          <button class="fav-btn ${song.isFavorite ? "active" : ""}" onclick="toggleFavorite(${song.id})">
+            <i class="${song.isFavorite ? "fas" : "far"} fa-heart"></i>
+          </button>
+          <button class="fav-btn" onclick="addSongToPlaylist(${song.id})" title="Thêm vào playlist">
+            <i class="fas fa-plus"></i>
+          </button>
+        </div>
+
+        ${user.role === "admin" ? `
+          <div class="song-actions">
+            <button class="btn edit-btn" onclick="openEdit(${song.id}, \`${escapeJsText(song.title)}\`, \`${escapeJsText(song.artist)}\`)">
+              <i class="fas fa-pen"></i>
+            </button>
+            <button class="btn delete-btn" onclick="deleteSong(${song.id})">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        ` : ""}
+      `;
+    }
+
+    list.appendChild(item);
   });
 }
 
-// ===== LOAD =====
-function loadSongs() {
-  fetch(API_URL + "/api/songs?userId=" + user.id)
-    .then(res => res.json())
-    .then(data => renderSongs(data));
-}
+function playByIndex(index) {
+  if (index < 0 || index >= currentSongs.length) return;
 
-// ===== SEARCH =====
-function searchSongs() {
-  const query = document.getElementById("searchInput").value;
-
-  if (!query.trim()) {
-    loadSongs();
-    return;
-  }
-
-  fetch(API_URL + "/api/songs/search?q=" + encodeURIComponent(query))
-    .then(res => res.json())
-    .then(data => renderSongs(data));
-}
-
-// ===== PLAY + RECENT =====
-function play(url, songId) {
-  const player = document.getElementById("player");
-  player.src = API_URL + url;
+  currentIndex = index;
+  const song = currentSongs[currentIndex];
+  player.src = API_URL + song.fileUrl;
   player.play();
 
-  // lưu recent
-  fetch(API_URL + "/api/recent", {
+  document.getElementById("p-title").innerText = song.title;
+  document.getElementById("p-artist").innerText = song.artist;
+  setPlayerArtwork(song.imageUrl);
+  mainPlayBtn.innerHTML = '<i class="fas fa-pause"></i>';
+
+  fetchJson(API_URL + "/api/recent", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      userId: user.id,
-      songId: songId
-    })
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId: user.id, songId: song.id })
   });
 }
 
-// ===== FAVORITE =====
+function togglePlay() {
+  if (!player.src) return;
+  if (player.paused) {
+    player.play();
+    mainPlayBtn.innerHTML = '<i class="fas fa-pause"></i>';
+  } else {
+    player.pause();
+    mainPlayBtn.innerHTML = '<i class="fas fa-play"></i>';
+  }
+}
+
+function nextSong() {
+  if (!currentSongs.length) return;
+  let next = currentIndex + 1;
+  if (next >= currentSongs.length) next = 0;
+  playByIndex(next);
+}
+
+function prevSong() {
+  if (!currentSongs.length) return;
+  let prev = currentIndex - 1;
+  if (prev < 0) prev = currentSongs.length - 1;
+  playByIndex(prev);
+}
+
+function replaySong() {
+  player.currentTime = 0;
+  player.play();
+  mainPlayBtn.innerHTML = '<i class="fas fa-pause"></i>';
+}
+
+player.onended = () => {
+  nextSong();
+};
+
+player.ontimeupdate = () => {
+  if (!player.duration) return;
+  const pct = (player.currentTime / player.duration) * 100;
+  progressFill.style.width = pct + "%";
+  document.getElementById("currentTime").innerText = formatTime(player.currentTime);
+  document.getElementById("duration").innerText = formatTime(player.duration);
+};
+
+progressWrapper.onclick = (e) => {
+  if (!player.duration) return;
+  const width = progressWrapper.clientWidth;
+  const clickX = e.offsetX;
+  player.currentTime = (clickX / width) * player.duration;
+};
+
+function changeVolume(val) {
+  player.volume = val;
+}
+
+function formatTime(seconds) {
+  const min = Math.floor(seconds / 60);
+  const sec = Math.floor(seconds % 60);
+  return `${min < 10 ? "0" + min : min}:${sec < 10 ? "0" + sec : sec}`;
+}
+
+function loadSongs() {
+  currentView = "all";
+  selectedPlaylistId = null;
+  selectedPlaylistName = "";
+  setActiveSidebar("homeNavBtn");
+  setViewTitle("Danh sách bài hát");
+  fetchJson(API_URL + "/api/songs?userId=" + user.id + "&_=" + Date.now())
+    .then((data) => renderSongs(data, "grid"));
+}
+
+function searchSongs() {
+  const query = document.getElementById("searchInput").value.trim();
+  if (!query) {
+    if (currentView === "playlist" && selectedPlaylistId) {
+      loadPlaylistSongs(selectedPlaylistId, selectedPlaylistName);
+      return;
+    }
+    loadSongs();
+    return;
+  }
+
+  fetchJson(API_URL + "/api/songs/search?q=" + encodeURIComponent(query) + "&_=" + Date.now())
+    .then((data) => {
+      setActiveSidebar(null);
+      currentView = "search";
+      setViewTitle(`Kết quả tìm kiếm: ${query}`);
+      renderSongs(data, "grid");
+    });
+}
+
 function toggleFavorite(songId) {
-  fetch(API_URL + "/api/favorites/toggle", {
+  fetchJson(API_URL + "/api/favorites/toggle", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      userId: user.id,
-      songId: songId
-    })
-  })
-  .then(res => res.json())
-  .then(data => {
-    if (data.status === "added") {
-      console.log("❤️ Added");
-    } else {
-      console.log("💔 Removed");
-    }
-
-    // reload lại UI (đơn giản)
-    loadSongs();
-  });
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId: user.id, songId })
+  }).then(() => refreshCurrentView());
 }
 
-// ===== LOAD FAVORITE =====
 function loadFavorites() {
-  fetch(API_URL + "/api/favorites/" + user.id)
-    .then(res => res.json())
-    .then(data => renderSongs(data));
+  currentView = "favorites";
+  selectedPlaylistId = null;
+  selectedPlaylistName = "";
+  setActiveSidebar("libraryNavBtn");
+  setViewTitle("Bài hát yêu thích");
+  document.getElementById("libraryMenu").style.display = "block";
+  fetchJson(API_URL + "/api/favorites/" + user.id + "?_=" + Date.now())
+    .then((data) => renderSongs(data, "grid"));
 }
 
-// ===== LOAD RECENT =====
 function loadRecent() {
-  fetch(API_URL + "/api/recent/" + user.id)
-    .then(res => res.json())
-    .then(data => renderSongs(data));
+  currentView = "recent";
+  selectedPlaylistId = null;
+  selectedPlaylistName = "";
+  setActiveSidebar("libraryNavBtn");
+  setViewTitle("Nghe gần đây");
+  document.getElementById("libraryMenu").style.display = "block";
+  fetchJson(API_URL + "/api/recent/" + user.id + "?_=" + Date.now())
+    .then((data) => renderSongs(data, "grid"));
 }
 
-// ===== TOGGLE LIBRARY =====
-function toggleLibrary() {
-  const menu = document.getElementById("libraryMenu");
+function renderPlaylistNav(playlists) {
+  playlistNav.innerHTML = "";
 
-  if (!menu) return;
-
-  menu.style.display =
-    menu.style.display === "block" ? "none" : "block";
-}
-
-// ===== UPLOAD =====
-function upload() {
-  if (user.role !== "admin") {
-    alert("Bạn không có quyền!");
+  if (!playlists.length) {
+    playlistNav.innerHTML = `<div class="playlist-empty">Chưa có playlist nào</div>`;
     return;
   }
 
-  const file = document.getElementById("file").files[0];
-  const title = document.getElementById("title").value;
-  const artist = document.getElementById("artist").value;
-  const image = document.getElementById("image").files[0];
-
-  if (!file || !title || !artist) {
-    alert("Nhập đủ thông tin!");
-    return;
-  }
-
-  const formData = new FormData();
-  formData.append("song", file);
-  formData.append("title", title);
-  formData.append("artist", artist);
-  if (image) formData.append("image", image);
-
-  fetch(API_URL + "/api/songs", {
-    method: "POST",
-    headers: {
-      "role": user.role
-    },
-    body: formData
-  })
-  .then(res => res.json())
-  .then(() => {
-    alert("Upload thành công!");
-    loadSongs();
-  });
-}
-
-// ===== DELETE =====
-function deleteSong(id) {
-  if (user.role !== "admin") {
-    alert("Bạn không có quyền!");
-    return;
-  }
-
-  if (!confirm("Xóa bài này?")) return;
-
-  fetch(API_URL + "/api/songs/" + id, {
-    method: "DELETE",
-    headers: {
-      "role": user.role
+  playlists.forEach((playlist) => {
+    const button = document.createElement("button");
+    button.className = "playlist-nav-item";
+    if (playlist.id === selectedPlaylistId) {
+      button.classList.add("active");
     }
-  })
-  .then(() => {
-    alert("Đã xóa!");
-    loadSongs();
+    button.innerHTML = `
+      <span class="playlist-nav-name">${escapeHtml(playlist.name)}</span>
+      <span class="playlist-nav-count">${playlist.songCount}</span>
+    `;
+    button.onclick = () => loadPlaylistSongs(playlist.id, playlist.name);
+    playlistNav.appendChild(button);
   });
 }
 
-// ===== EDIT =====
-let currentEditId = null;
+function loadPlaylists() {
+  return fetchJson(API_URL + "/api/playlists?userId=" + user.id + "&_=" + Date.now())
+    .then((playlists) => {
+      renderPlaylistNav(playlists);
+      return playlists;
+    })
+    .catch(() => {
+      playlistNav.innerHTML = `<div class="playlist-empty">Không tải được playlist</div>`;
+      return [];
+    });
+}
 
-function editSong(id, title, artist) {
-  currentEditId = id;
+function loadPlaylistSongs(playlistId, playlistName) {
+  currentView = "playlist";
+  selectedPlaylistId = playlistId;
+  if (playlistName) {
+    selectedPlaylistName = playlistName;
+  }
+  setActiveSidebar(null);
+
+  fetchJson(API_URL + `/api/playlists/${playlistId}/songs?userId=${user.id}&_=${Date.now()}`)
+    .then((data) => {
+      setViewTitle(selectedPlaylistName ? `Playlist: ${selectedPlaylistName}` : "Playlist");
+      renderSongs(data, "playlist");
+      return loadPlaylists();
+    });
+}
+
+function createPlaylist() {
+  const name = prompt("Nhập tên playlist:");
+  if (!name || !name.trim()) return;
+
+  fetchJson(API_URL + "/api/playlists", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId: user.id, name: name.trim() })
+  }).then((data) => {
+    if (data.error) {
+      alert(data.error);
+      return;
+    }
+    loadPlaylistSongs(data.playlist.id, data.playlist.name);
+  });
+}
+
+function addSongToPlaylist(songId) {
+  loadPlaylists().then((playlists) => {
+    if (!playlists.length) {
+      alert("Bạn cần tạo playlist trước.");
+      return;
+    }
+
+    const options = playlists.map((playlist) => `${playlist.id}: ${playlist.name}`).join("\n");
+    const selected = prompt(`Chọn playlist theo id:\n${options}`);
+    if (!selected) return;
+
+    const playlistId = parseInt(selected, 10);
+    if (Number.isNaN(playlistId)) {
+      alert("ID playlist không hợp lệ.");
+      return;
+    }
+
+    fetchJson(API_URL + `/api/playlists/${playlistId}/songs`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: user.id, songId })
+    }).then((data) => {
+      alert(data.message || data.error || "Đã xử lý.");
+      loadPlaylists();
+      if (currentView === "playlist" && selectedPlaylistId === playlistId) {
+        loadPlaylistSongs(playlistId, selectedPlaylistName);
+      }
+    });
+  });
+}
+
+function refreshCurrentView() {
+  if (currentView === "favorites") {
+    loadFavorites();
+    return;
+  }
+  if (currentView === "recent") {
+    loadRecent();
+    return;
+  }
+  if (currentView === "playlist" && selectedPlaylistId) {
+    loadPlaylistSongs(selectedPlaylistId, selectedPlaylistName);
+    return;
+  }
+  loadSongs();
+}
+
+function openEdit(id, title, artist) {
+  editId = id;
   document.getElementById("editTitle").value = title;
   document.getElementById("editArtist").value = artist;
   document.getElementById("editModal").style.display = "flex";
@@ -226,45 +422,63 @@ function editSong(id, title, artist) {
 
 function closeModal() {
   document.getElementById("editModal").style.display = "none";
+  editId = null;
 }
 
 function submitEdit() {
-  if (user.role !== "admin") {
-    alert("Bạn không có quyền!");
-    return;
-  }
-
   const title = document.getElementById("editTitle").value;
   const artist = document.getElementById("editArtist").value;
-  const file = document.getElementById("editFile").files[0];
-  const image = document.getElementById("editImage").files[0];
-
+  const songFile = document.getElementById("editFile").files[0];
+  const imageFile = document.getElementById("editImage").files[0];
   const formData = new FormData();
+
   formData.append("title", title);
   formData.append("artist", artist);
-  if (file) formData.append("song", file);
-  if (image) formData.append("image", image);
+  if (songFile) formData.append("song", songFile);
+  if (imageFile) formData.append("image", imageFile);
 
-  fetch(API_URL + "/api/songs/" + currentEditId, {
+  fetchJson(API_URL + "/api/songs/" + editId, {
     method: "PUT",
-    headers: {
-      "role": user.role
-    },
+    headers: { role: user.role },
     body: formData
-  })
-  .then(() => {
+  }).then((data) => {
+    if (data.error) {
+      alert(data.error);
+      return;
+    }
     alert("Cập nhật thành công!");
     closeModal();
-    loadSongs();
+    refreshCurrentView();
   });
 }
 
-// ===== NAV =====
+function deleteSong(id) {
+  if (!confirm("Bạn có chắc muốn xóa không?")) return;
+
+  fetchJson(API_URL + "/api/songs/" + id, {
+    method: "DELETE",
+    headers: { role: user.role }
+  }).then((data) => {
+    if (data.error) {
+      alert(data.error);
+      return;
+    }
+    alert("Xóa thành công!");
+    refreshCurrentView();
+  });
+}
+
+function toggleLibrary() {
+  const menu = document.getElementById("libraryMenu");
+  menu.style.display = menu.style.display === "block" ? "none" : "block";
+}
+
+function logout() {
+  localStorage.removeItem("user");
+  window.location.href = "/login";
+}
+
 function goToUpload() {
-  if (user.role !== "admin") {
-    alert("Chỉ admin được upload!");
-    return;
-  }
   window.location.href = "/upload";
 }
 
@@ -272,12 +486,88 @@ function goHome() {
   window.location.href = "/";
 }
 
-// ===== INIT =====
-window.onload = () => {
-  loadSongs();
-
-  // Ẩn upload nếu không phải admin
-  if (user.role !== "admin") {
-    document.querySelector(".upload-box")?.remove();
+function upload() {
+  if (!user || user.role !== "admin") {
+    alert("Bạn không có quyền tải nhạc.");
+    window.location.href = "/";
+    return;
   }
+
+  const titleInput = document.getElementById("title");
+  const artistInput = document.getElementById("artist");
+  const fileInput = document.getElementById("file");
+  const imageInput = document.getElementById("image");
+
+  if (!titleInput || !artistInput || !fileInput) return;
+
+  const title = titleInput.value.trim();
+  const artist = artistInput.value.trim();
+  const songFile = fileInput.files[0];
+  const imageFile = imageInput?.files[0];
+
+  if (!title || !artist) {
+    alert("Vui lòng nhập tên bài hát và nghệ sĩ.");
+    return;
+  }
+
+  if (!songFile) {
+    alert("Vui lòng chọn file nhạc.");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("title", title);
+  formData.append("artist", artist);
+  formData.append("song", songFile);
+  if (imageFile) {
+    formData.append("image", imageFile);
+  }
+
+  fetchJson(API_URL + "/api/songs", {
+    method: "POST",
+    headers: { role: user.role },
+    body: formData
+  }).then((data) => {
+    if (data.error) {
+      alert(data.error);
+      return;
+    }
+
+    alert(data.message || "Tải nhạc thành công!");
+    titleInput.value = "";
+    artistInput.value = "";
+    fileInput.value = "";
+    if (imageInput) {
+      imageInput.value = "";
+    }
+  }).catch(() => {
+    alert("Không thể tải nhạc lên.");
+  });
+}
+
+window.onload = async () => {
+  if (window.location.pathname === "/upload") {
+    if (!user) {
+      window.location.href = "/login";
+      return;
+    }
+    if (user.role !== "admin") {
+      alert("Bạn không có quyền truy cập trang này.");
+      window.location.href = "/";
+    }
+    return;
+  }
+
+  const userName = document.getElementById("userName");
+  const userRole = document.getElementById("userRole");
+  if (!userName || !userRole) return;
+
+  userName.innerText = user.username;
+  userRole.innerText = user.role;
+  if (user.role !== "admin") {
+    document.querySelector('.nav-btn[onclick="goToUpload()"]')?.remove();
+  }
+
+  await loadPlaylists();
+  loadSongs();
 };

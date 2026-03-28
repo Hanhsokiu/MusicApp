@@ -1,394 +1,478 @@
-from flask import Flask, request, jsonify, send_from_directory, render_template
-from flask_cors import CORS
-from werkzeug.security import generate_password_hash, check_password_hash
 import os
 import time
+
+import flask
 import pyodbc
+from werkzeug.security import check_password_hash, generate_password_hash
 
 
-conn = pyodbc.connect(
+cn_str = (
     "DRIVER={ODBC Driver 17 for SQL Server};"
     "SERVER=LAPTOP-23HSO403\\SQLEXPRESS;"
     "DATABASE=MusicApp;"
     "Trusted_Connection=yes;"
 )
-cursor = conn.cursor()
 
-
-app = Flask(__name__)
-CORS(app)
-
-
+conn = pyodbc.connect(cn_str)
+app = flask.Flask(__name__)
 
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# ===== PHÂN QUYỀN =====
+
 def is_admin(role):
     return role == "admin"
 
-#========================================================================================
-# Get songs
+
+def get_response(data, status_code=200):
+    resp = flask.jsonify(data)
+    resp.status_code = status_code
+    return resp
+
+
+def get_list_result(cursor):
+    results = []
+    keys = []
+    for item in cursor.description:
+        keys.append(item[0])
+    for value in cursor.fetchall():
+        results.append(dict(zip(keys, value)))
+    return results
+
+
 @app.route('/api/songs', methods=['GET'])
-def get_songs():
-    userId = request.args.get("userId")
+def get_all_song():
+    try:
+        user_id = flask.request.args.get("userId")
+        cursor = conn.cursor()
+        cursor.execute("""
+            select s.*,
+                   case when f.songId is not null then 1 else 0 end as isFavorite
+            from Songs s
+            left join Favorites f on s.id = f.songId and f.userId = ?
+        """, user_id)
+        return get_response(get_list_result(cursor))
+    except Exception as e:
+        print(e)
+        return get_response({"error": "Không lấy được danh sách bài hát"}, 500)
 
-    cursor.execute("""
-        SELECT s.*, 
-               CASE WHEN f.songId IS NOT NULL THEN 1 ELSE 0 END AS isFavorite
-        FROM Songs s
-        LEFT JOIN Favorites f 
-        ON s.id = f.songId AND f.userId = ?
-    """, (userId,))
 
-    rows = cursor.fetchall()
-
-    data = []
-    for row in rows:
-        data.append({
-            "id": row.id,
-            "title": row.title,
-            "artist": row.artist,
-            "fileUrl": row.fileUrl,
-            "imageUrl": row.imageUrl,
-            "isFavorite": row.isFavorite
-        })
-
-    return jsonify(data)
-#========================================================================================
-# Upload (Admin only)
-@app.route('/api/songs', methods=['POST'])
-def upload_song():
-    role = request.headers.get("role")
-
-    if not is_admin(role):
-        return jsonify({"error": "Permission denied"}), 403
-
-    if 'song' not in request.files:
-        return jsonify({"error": "No song file"}), 400
-
-    song_file = request.files['song']
-    image_file = request.files.get('image')
-
-    title = request.form.get('title')
-    artist = request.form.get('artist')
-
-    # Save song
-    song_filename = str(int(time.time())) + "_" + song_file.filename
-    song_path = os.path.join(UPLOAD_FOLDER, song_filename)
-    song_file.save(song_path)
-
-    fileUrl = "/uploads/" + song_filename
-    # ========================================================================================
-    # Save image
-    imageUrl = None
-    if image_file:
-        image_filename = "img_" + str(int(time.time())) + "_" + image_file.filename
-        image_path = os.path.join(UPLOAD_FOLDER, image_filename)
-        image_file.save(image_path)
-        imageUrl = "/uploads/" + image_filename
-
-    # Save DB
-    cursor.execute(
-        "INSERT INTO Songs (title, artist, fileUrl, imageUrl) VALUES (?, ?, ?, ?)",
-        (title, artist, fileUrl, imageUrl)
-    )
-    conn.commit()
-
-    return jsonify({"message": "Upload success"})
-
-#========================================================================================
-# Search
-@app.route('/api/songs/search')
+@app.route('/api/songs/search', methods=['GET'])
 def search_song():
-    q = request.args.get('q', '')
+    try:
+        q = flask.request.args.get("q", "")
+        cursor = conn.cursor()
+        cursor.execute("select * from Songs where title like ?", "%" + q + "%")
+        return get_response(get_list_result(cursor))
+    except Exception as e:
+        print(e)
+        return get_response({"error": "Không tìm kiếm được bài hát"}, 500)
 
-    cursor.execute(
-        "SELECT * FROM Songs WHERE title LIKE ?",
-        ('%' + q + '%',)
-    )
-    rows = cursor.fetchall()
 
-    data = []
-    for row in rows:
-        data.append({
-            "id": row.id,
-            "title": row.title,
-            "artist": row.artist,
-            "fileUrl": row.fileUrl,
-            "imageUrl": row.imageUrl
+@app.route('/api/songs', methods=['POST'])
+def add_song():
+    try:
+        role = flask.request.headers.get("role")
+        if not is_admin(role):
+            return get_response({"error": "Permission denied"}, 403)
 
-        })
+        if 'song' not in flask.request.files:
+            return get_response({"error": "No song file"}, 400)
 
-    return jsonify(data)
-#========================================================================================
-# Delete (Admin only)
-@app.route('/api/songs/<int:id>', methods=['DELETE'])
-def delete_song(id):
-    role = request.headers.get("role")
+        title = flask.request.form.get("title")
+        artist = flask.request.form.get("artist")
+        song_file = flask.request.files['song']
+        image_file = flask.request.files.get('image')
 
-    if not is_admin(role):
-        return jsonify({"error": "Permission denied"}), 403
+        song_filename = str(int(time.time())) + "_" + song_file.filename
+        song_path = os.path.join(UPLOAD_FOLDER, song_filename)
+        song_file.save(song_path)
+        file_url = "/uploads/" + song_filename
 
-    cursor.execute("SELECT fileUrl, imageUrl FROM Songs WHERE id = ?", (id,))
-    row = cursor.fetchone()
+        image_url = None
+        if image_file:
+            image_filename = "img_" + str(int(time.time())) + "_" + image_file.filename
+            image_path = os.path.join(UPLOAD_FOLDER, image_filename)
+            image_file.save(image_path)
+            image_url = "/uploads/" + image_filename
 
-    if not row:
-        return jsonify({"error": "Not found"}), 404
+        cursor = conn.cursor()
+        sql = "insert into Songs(title, artist, fileUrl, imageUrl) values(?, ?, ?, ?)"
+        data = (title, artist, file_url, image_url)
+        cursor.execute(sql, data)
+        conn.commit()
+        return get_response({"message": "Upload success"})
+    except Exception as e:
+        print(e)
+        return get_response({"error": "Upload thất bại"}, 500)
 
-    # delete file
-    if row.fileUrl:
-        path = os.path.join(UPLOAD_FOLDER, row.fileUrl.replace("/uploads/", ""))
-        if os.path.exists(path):
-            os.remove(path)
 
-    if row.imageUrl:
-        path = os.path.join(UPLOAD_FOLDER, row.imageUrl.replace("/uploads/", ""))
-        if os.path.exists(path):
-            os.remove(path)
-
-    cursor.execute("DELETE FROM Songs WHERE id = ?", (id,))
-    conn.commit()
-
-    return jsonify({"message": "Deleted"})
-#========================================================================================
-# Update (Admin only)
-@app.route('/api/songs/<int:id>', methods=['PUT'])
+@app.route('/api/songs/<id>', methods=['PUT'])
 def update_song(id):
-    role = request.headers.get("role")
+    try:
+        role = flask.request.headers.get("role")
+        if not is_admin(role):
+            return get_response({"error": "Permission denied"}, 403)
 
-    if not is_admin(role):
-        return jsonify({"error": "Permission denied"}), 403
+        cursor = conn.cursor()
+        cursor.execute("select * from Songs where id = ?", id)
+        song = cursor.fetchone()
+        if not song:
+            return get_response({"error": "Not found"}, 404)
 
-    cursor.execute("SELECT * FROM Songs WHERE id = ?", (id,))
-    row = cursor.fetchone()
+        title = flask.request.form.get("title")
+        artist = flask.request.form.get("artist")
+        song_file = flask.request.files.get("song")
+        image_file = flask.request.files.get("image")
 
-    if not row:
-        return jsonify({"error": "Not found"}), 404
+        file_url = song.fileUrl
+        image_url = song.imageUrl
 
-    title = request.form.get('title')
-    artist = request.form.get('artist')
-    song_file = request.files.get('song')
-    image_file = request.files.get('image')
+        if song_file:
+            song_filename = str(int(time.time())) + "_" + song_file.filename
+            song_path = os.path.join(UPLOAD_FOLDER, song_filename)
+            song_file.save(song_path)
+            file_url = "/uploads/" + song_filename
 
-    fileUrl = row.fileUrl
-    imageUrl = row.imageUrl
+        if image_file:
+            image_filename = "img_" + str(int(time.time())) + "_" + image_file.filename
+            image_path = os.path.join(UPLOAD_FOLDER, image_filename)
+            image_file.save(image_path)
+            image_url = "/uploads/" + image_filename
 
-    if song_file:
-        name = str(int(time.time())) + "_" + song_file.filename
-        path = os.path.join(UPLOAD_FOLDER, name)
-        song_file.save(path)
-        fileUrl = "/uploads/" + name
+        sql = "update Songs set title = ?, artist = ?, fileUrl = ?, imageUrl = ? where id = ?"
+        data = (title, artist, file_url, image_url, id)
+        cursor.execute(sql, data)
+        conn.commit()
+        return get_response({"message": "Updated"})
+    except Exception as e:
+        print(e)
+        return get_response({"error": "Cập nhật thất bại"}, 500)
 
-    if image_file:
-        name = "img_" + str(int(time.time())) + "_" + image_file.filename
-        path = os.path.join(UPLOAD_FOLDER, name)
-        image_file.save(path)
-        imageUrl = "/uploads/" + name
 
-    cursor.execute("""
-        UPDATE Songs
-        SET title=?, artist=?, fileUrl=?, imageUrl=?
-        WHERE id=?
-    """, (title, artist, fileUrl, imageUrl, id))
-    conn.commit()
-    return jsonify({"message": "Updated"})
-#========================================================================================
-# Register
+@app.route('/api/songs/<id>', methods=['DELETE'])
+def delete_song(id):
+    try:
+        role = flask.request.headers.get("role")
+        if not is_admin(role):
+            return get_response({"error": "Permission denied"}, 403)
+
+        cursor = conn.cursor()
+        cursor.execute("select fileUrl, imageUrl from Songs where id = ?", id)
+        song = cursor.fetchone()
+        if not song:
+            return get_response({"error": "Not found"}, 404)
+
+        if song.fileUrl:
+            song_path = os.path.join(UPLOAD_FOLDER, song.fileUrl.replace("/uploads/", ""))
+            if os.path.exists(song_path):
+                os.remove(song_path)
+
+        if song.imageUrl:
+            image_path = os.path.join(UPLOAD_FOLDER, song.imageUrl.replace("/uploads/", ""))
+            if os.path.exists(image_path):
+                os.remove(image_path)
+
+        cursor.execute("delete from PlaylistSongs where songId = ?", id)
+        cursor.execute("delete from Favorites where songId = ?", id)
+        cursor.execute("delete from Recent where songId = ?", id)
+        cursor.execute("delete from Songs where id = ?", id)
+        conn.commit()
+        return get_response({"message": "Deleted"})
+    except Exception as e:
+        print(e)
+        return get_response({"error": "Xóa thất bại"}, 500)
+
+
 @app.route('/api/register', methods=['POST'])
 def register():
-    data = request.json
-    username = data.get("username")
-    password = data.get("password")
-
-    if not username or not password:
-        return jsonify({"error": "Missing data"}), 400
-
-    hashed = generate_password_hash(password)
-
     try:
-        cursor.execute(
-            "INSERT INTO Users (username, password, role) VALUES (?, ?, ?)",
-            (username, hashed, "user")
-        )
-        conn.commit()
-        return jsonify({"message": "Register success"})
-    except:
-        return jsonify({"error": "Username exists"}), 400
+        username = flask.request.json.get("username")
+        password = flask.request.json.get("password")
 
-#=========================
-# Login
+        if not username or not password:
+            return get_response({"error": "Missing data"}, 400)
+
+        hashed_password = generate_password_hash(password)
+        cursor = conn.cursor()
+        sql = "insert into Users(username, password, role) values(?, ?, ?)"
+        data = (username, hashed_password, "user")
+        cursor.execute(sql, data)
+        conn.commit()
+        return get_response({"message": "Register success"})
+    except Exception as e:
+        print(e)
+        return get_response({"error": "Username exists"}, 400)
+
+
 @app.route('/api/login', methods=['POST'])
 def login():
-    data = request.json
-    username = data.get("username")
-    password = data.get("password")
+    try:
+        username = flask.request.json.get("username")
+        password = flask.request.json.get("password")
 
-    cursor.execute("SELECT * FROM Users WHERE username = ?", (username,))
-    user = cursor.fetchone()
+        cursor = conn.cursor()
+        cursor.execute("select * from Users where username = ?", username)
+        user = cursor.fetchone()
 
-    if user and check_password_hash(user.password, password):
-        return jsonify({
-            "message": "Login success",
-            "user": {
-                "id": user.id,
-                "username": user.username,
-                "role": user.role
-            }
-        })
+        if user and check_password_hash(user.password, password):
+            return get_response({
+                "message": "Login success",
+                "user": {
+                    "id": user.id,
+                    "username": user.username,
+                    "role": user.role
+                }
+            })
 
-    return jsonify({"error": "Invalid login"}), 401
-#========================================================================================
+        return get_response({"error": "Invalid login"}, 401)
+    except Exception as e:
+        print(e)
+        return get_response({"error": "Đăng nhập thất bại"}, 500)
+
+
 @app.route('/api/favorites', methods=['POST'])
 def add_favorite():
-    userId = request.json.get("userId")
-    songId = request.json.get("songId")
+    try:
+        user_id = flask.request.json.get("userId")
+        song_id = flask.request.json.get("songId")
 
-    # 🔍 kiểm tra tồn tại
-    cursor.execute(
-        "SELECT * FROM Favorites WHERE userId=? AND songId=?",
-        (userId, songId)
-    )
-    exists = cursor.fetchone()
+        cursor = conn.cursor()
+        cursor.execute("select * from Favorites where userId = ? and songId = ?", (user_id, song_id))
+        favorite = cursor.fetchone()
+        if favorite:
+            return get_response({"message": "Already liked"})
 
-    if exists:
-        return jsonify({"message": "Already liked"})
+        sql = "insert into Favorites(userId, songId) values(?, ?)"
+        data = (user_id, song_id)
+        cursor.execute(sql, data)
+        conn.commit()
+        return get_response({"message": "Added"})
+    except Exception as e:
+        print(e)
+        return get_response({"error": "Thêm yêu thích thất bại"}, 500)
 
-    # ✅ thêm nếu chưa có
-    cursor.execute(
-        "INSERT INTO Favorites (userId, songId) VALUES (?, ?)",
-        (userId, songId)
-    )
-    conn.commit()
 
-    return jsonify({"message": "Added"})
-#========================================================================================
 @app.route('/api/favorites', methods=['DELETE'])
 def remove_favorite():
-    userId = request.json.get("userId")
-    songId = request.json.get("songId")
+    try:
+        user_id = flask.request.json.get("userId")
+        song_id = flask.request.json.get("songId")
 
-    cursor.execute(
-        "DELETE FROM Favorites WHERE userId=? AND songId=?",
-        (userId, songId)
-    )
-    conn.commit()
+        cursor = conn.cursor()
+        sql = "delete from Favorites where userId = ? and songId = ?"
+        data = (user_id, song_id)
+        cursor.execute(sql, data)
+        conn.commit()
+        return get_response({"message": "Removed"})
+    except Exception as e:
+        print(e)
+        return get_response({"error": "Xóa yêu thích thất bại"}, 500)
 
-    return jsonify({"message": "Removed"})
-#========================================================================================
-@app.route('/api/favorites/<int:userId>')
-def get_favorites(userId):
-    cursor.execute("""
-        SELECT s.* FROM Songs s
-        JOIN Favorites f ON s.id = f.songId
-        WHERE f.userId = ?
-    """, (userId,))
 
-    rows = cursor.fetchall()
+@app.route('/api/favorites/<id>', methods=['GET'])
+def get_favorite_by_user(id):
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            select s.*, 1 as isFavorite
+            from Songs s
+            join Favorites f on s.id = f.songId
+            where f.userId = ?
+        """, id)
+        return get_response(get_list_result(cursor))
+    except Exception as e:
+        print(e)
+        return get_response({"error": "Không lấy được danh sách yêu thích"}, 500)
 
-    data = []
-    for row in rows:
-        data.append({
-            "id": row.id,
-            "title": row.title,
-            "artist": row.artist,
-            "fileUrl": row.fileUrl,
-            "imageUrl": row.imageUrl,
-            "isFavorite": 1
-        })
 
-    return jsonify(data)
-#========================================================================================
-@app.route('/api/recent', methods=['POST'])
-def add_recent():
-    userId = request.json.get("userId")
-    songId = request.json.get("songId")
-
-    cursor.execute(
-        "INSERT INTO Recent (userId, songId) VALUES (?, ?)",
-        (userId, songId)
-    )
-    conn.commit()
-
-    return jsonify({"message": "Added recent"})
-#========================================================================================
-@app.route('/api/recent/<int:userId>')
-def get_recent(userId):
-    cursor.execute("""
-        SELECT TOP 10 s.* FROM Songs s
-        JOIN Recent r ON s.id = r.songId
-        WHERE r.userId = ?
-        ORDER BY r.playedAt DESC
-    """, (userId,))
-
-    rows = cursor.fetchall()
-
-    data = []
-    for row in rows:
-        data.append({
-            "id": row.id,
-            "title": row.title,
-            "artist": row.artist,
-            "fileUrl": row.fileUrl,
-            "imageUrl": row.imageUrl
-        })
-
-    return jsonify(data)
-#========================================================================================
-#========================================================================================
 @app.route('/api/favorites/toggle', methods=['POST'])
 def toggle_favorite():
-    userId = request.json.get("userId")
-    songId = request.json.get("songId")
+    try:
+        user_id = flask.request.json.get("userId")
+        song_id = flask.request.json.get("songId")
 
-    # 🔍 kiểm tra đã tồn tại chưa
-    cursor.execute(
-        "SELECT * FROM Favorites WHERE userId=? AND songId=?",
-        (userId, songId)
-    )
-    exists = cursor.fetchone()
+        cursor = conn.cursor()
+        cursor.execute("select * from Favorites where userId = ? and songId = ?", (user_id, song_id))
+        favorite = cursor.fetchone()
 
-    if exists:
+        if favorite:
+            cursor.execute("delete from Favorites where userId = ? and songId = ?", (user_id, song_id))
+            conn.commit()
+            return get_response({"status": "removed"})
 
-        cursor.execute(
-            "DELETE FROM Favorites WHERE userId=? AND songId=?",
-            (userId, songId)
-        )
+        cursor.execute("insert into Favorites(userId, songId) values(?, ?)", (user_id, song_id))
         conn.commit()
-        return jsonify({"status": "removed"})
-    else:
-        # ✅ chưa có → thêm
-        cursor.execute(
-            "INSERT INTO Favorites (userId, songId) VALUES (?, ?)",
-            (userId, songId)
-        )
+        return get_response({"status": "added"})
+    except Exception as e:
+        print(e)
+        return get_response({"error": "Cập nhật yêu thích thất bại"}, 500)
+
+
+@app.route('/api/recent', methods=['POST'])
+def add_recent():
+    try:
+        user_id = flask.request.json.get("userId")
+        song_id = flask.request.json.get("songId")
+
+        cursor = conn.cursor()
+        sql = "insert into Recent(userId, songId) values(?, ?)"
+        data = (user_id, song_id)
+        cursor.execute(sql, data)
         conn.commit()
-        return jsonify({"status": "added"})
-#========================================================================================
-#========================================================================================
-#========================================================================================
+        return get_response({"message": "Added recent"})
+    except Exception as e:
+        print(e)
+        return get_response({"error": "Không thêm được recent"}, 500)
 
-#========================================================================================
 
-#STATIC + PAGES
-@app.route('/uploads/<filename>')
+@app.route('/api/recent/<id>', methods=['GET'])
+def get_recent(id):
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            select top 10 s.*
+            from Songs s
+            join Recent r on s.id = r.songId
+            where r.userId = ?
+            order by r.playedAt desc
+        """, id)
+        return get_response(get_list_result(cursor))
+    except Exception as e:
+        print(e)
+        return get_response({"error": "Không lấy được recent"}, 500)
+
+
+@app.route('/api/playlists', methods=['GET'])
+def get_all_playlist():
+    try:
+        user_id = flask.request.args.get("userId")
+        cursor = conn.cursor()
+        cursor.execute("""
+            select p.id, p.name, count(ps.songId) as songCount
+            from Playlists p
+            left join PlaylistSongs ps on p.id = ps.playlistId
+            where p.userId = ?
+            group by p.id, p.name, p.createdAt
+            order by p.createdAt desc
+        """, user_id)
+        return get_response(get_list_result(cursor))
+    except Exception as e:
+        print(e)
+        return get_response({"error": "Không lấy được playlist"}, 500)
+
+
+@app.route('/api/playlists', methods=['POST'])
+def add_playlist():
+    try:
+        user_id = flask.request.json.get("userId")
+        name = (flask.request.json.get("name") or "").strip()
+
+        if not user_id or not name:
+            return get_response({"error": "Missing playlist data"}, 400)
+
+        cursor = conn.cursor()
+        sql = "insert into Playlists(userId, name) values(?, ?)"
+        data = (user_id, name)
+        cursor.execute(sql, data)
+        conn.commit()
+
+        cursor.execute("select top 1 id, name from Playlists where userId = ? order by id desc", user_id)
+        playlist = cursor.fetchone()
+        return get_response({
+            "message": "Playlist created",
+            "playlist": {
+                "id": playlist.id,
+                "name": playlist.name,
+                "songCount": 0
+            }
+        })
+    except Exception as e:
+        print(e)
+        return get_response({"error": "Tạo playlist thất bại"}, 500)
+
+
+@app.route('/api/playlists/<playlist_id>/songs', methods=['GET'])
+def get_song_by_playlist(playlist_id):
+    try:
+        user_id = flask.request.args.get("userId")
+        cursor = conn.cursor()
+
+        cursor.execute("select * from Playlists where id = ? and userId = ?", (playlist_id, user_id))
+        playlist = cursor.fetchone()
+        if not playlist:
+            return get_response({"error": "Playlist not found"}, 404)
+
+        cursor.execute("""
+            select s.*,
+                   case when f.songId is not null then 1 else 0 end as isFavorite
+            from PlaylistSongs ps
+            join Songs s on s.id = ps.songId
+            left join Favorites f on s.id = f.songId and f.userId = ?
+            where ps.playlistId = ?
+            order by ps.addedAt asc, ps.id asc
+        """, (user_id, playlist_id))
+        return get_response(get_list_result(cursor))
+    except Exception as e:
+        print(e)
+        return get_response({"error": "Không lấy được bài hát trong playlist"}, 500)
+
+
+@app.route('/api/playlists/<playlist_id>/songs', methods=['POST'])
+def add_song_to_playlist(playlist_id):
+    try:
+        user_id = flask.request.json.get("userId")
+        song_id = flask.request.json.get("songId")
+        cursor = conn.cursor()
+
+        cursor.execute("select * from Playlists where id = ? and userId = ?", (playlist_id, user_id))
+        playlist = cursor.fetchone()
+        if not playlist:
+            return get_response({"error": "Playlist not found"}, 404)
+
+        cursor.execute("select * from PlaylistSongs where playlistId = ? and songId = ?", (playlist_id, song_id))
+        playlist_song = cursor.fetchone()
+        if playlist_song:
+            return get_response({"message": "Song already in playlist"})
+
+        sql = "insert into PlaylistSongs(playlistId, songId) values(?, ?)"
+        data = (playlist_id, song_id)
+        cursor.execute(sql, data)
+        conn.commit()
+        return get_response({"message": "Song added to playlist"})
+    except Exception as e:
+        print(e)
+        return get_response({"error": "Không thêm được bài hát vào playlist"}, 500)
+
+
+@app.route('/uploads/<filename>', methods=['GET'])
 def get_file(filename):
-    return send_from_directory(UPLOAD_FOLDER, filename)
+    try:
+        return flask.send_from_directory(UPLOAD_FOLDER, filename)
+    except Exception as e:
+        print(e)
+        return get_response({"error": "Không lấy được file"}, 404)
 
-@app.route('/')
+
+@app.route('/', methods=['GET'])
 def home():
-    return render_template('index.html')
+    return flask.render_template('index.html')
 
-@app.route('/upload')
+
+@app.route('/upload', methods=['GET'])
 def upload_page():
-    return render_template('upload.html')
+    return flask.render_template('upload.html')
 
-@app.route('/login')
+
+@app.route('/login', methods=['GET'])
 def login_page():
-    return render_template('login.html')
-@app.route('/register')
-def register_page():
-    return render_template('register.html')
+    return flask.render_template('login.html')
 
-if __name__ == '__main__':
+
+@app.route('/register', methods=['GET'])
+def register_page():
+    return flask.render_template('register.html')
+
+
+if __name__ == "__main__":
     app.run(debug=True)

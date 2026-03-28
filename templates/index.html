@@ -5,104 +5,136 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Music App - Premium</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="/static/style.css">
 </head>
-
 <body>
-
   <div class="sidebar">
-  <div class="logo">
-    <i class="fab fa-spotify" style="color: var(--primary-color); font-size: 32px;"></i>
-    MusicAPI
-  </div>
+    <div class="logo">
+      <i class="fab fa-spotify" style="color: var(--primary-color); font-size: 32px;"></i>
+      MusicAPI
+    </div>
 
-  <button class="nav-btn active" onclick="loadSongs()">
-    <i class="fas fa-home"></i> Trang chủ
-  </button>
-
-  <button class="nav-btn">
-    <i class="fas fa-search"></i> Tìm kiếm
-  </button>
-
-  <!-- 📚 THƯ VIỆN -->
-  <button class="nav-btn" onclick="toggleLibrary()">
-    <i class="fas fa-book"></i> Thư viện
-  </button>
-
-  <!-- 👇 MENU CON -->
-  <div id="libraryMenu" style="display:none; margin-left:15px;">
-    <button class="nav-btn" onclick="loadFavorites()">
-      <i class="fas fa-heart"></i> Yêu thích
+    <button class="nav-btn active" id="homeNavBtn" onclick="loadSongs()">
+      <i class="fas fa-home"></i> Trang chủ
     </button>
 
-    <button class="nav-btn" onclick="loadRecent()">
-      <i class="fas fa-clock"></i> Gần đây
+    <button class="nav-btn" id="libraryNavBtn" onclick="toggleLibrary()">
+      <i class="fas fa-book"></i> Thư viện
     </button>
+
+    <div id="libraryMenu" class="library-menu">
+      <button class="nav-btn sub-nav-btn" onclick="loadFavorites()">
+        <i class="fas fa-heart"></i> Yêu thích
+      </button>
+
+      <button class="nav-btn sub-nav-btn" onclick="loadRecent()">
+        <i class="fas fa-clock"></i> Gần đây
+      </button>
+    </div>
+
+    <div class="playlist-panel">
+      <div class="playlist-header">
+        <span>Playlist</span>
+        <button class="playlist-create-btn" onclick="createPlaylist()" title="Tạo playlist">
+          <i class="fas fa-plus"></i>
+        </button>
+      </div>
+
+      <div id="playlistNav" class="playlist-nav">
+        <div class="playlist-empty">Chưa có playlist nào</div>
+      </div>
+    </div>
   </div>
-
-</div>
-
-
 
   <div class="main-content">
+    <div class="user-bar">
+      <span id="userName"></span>
+      <span id="userRole" class="role-badge"></span>
+      <button class="nav-btn" onclick="logout()">
+        <i class="fas fa-sign-out-alt"></i> Đăng xuất
+      </button>
+    </div>
 
-
-     <div class="user-bar">
-  <span id="userName"></span>
-  <span id="userRole" class="role-badge"></span>
-  <button class="nav-btn" onclick="logout()">
-  <i class="fas fa-sign-out-alt"></i> Đăng xuất
-</button>
-
-
-</div>
     <div class="search-box">
-          <i class="fas fa-search search-icon"></i>
-          <input type="text" id="searchInput" placeholder="Bạn muốn nghe bài gì hôm nay?" oninput="searchSongs()">
+      <i class="fa-solid fa-magnifying-glass search-icon"></i>
+      <input type="text" id="searchInput" placeholder="Bạn muốn nghe bài gì hôm nay?" oninput="searchSongs()">
     </div>
 
     <button class="nav-btn" onclick="goToUpload()">
-  <i class="fas fa-cloud-upload-alt"></i> Tải nhạc
-</button>
+      <i class="fas fa-cloud-upload-alt"></i> Tải nhạc
+    </button>
 
+    <h2 class="header-title" id="viewTitle">Danh sách bài hát</h2>
 
-    <h2 class="header-title">Danh sách bài hát</h2>
-
-    <div class="song-list" id="list">
-      </div>
-
+    <div class="song-list" id="list"></div>
   </div>
 
   <div class="player-bar">
-    <audio id="player" controls controlsList="nodownload"></audio>
-  </div>
+    <audio id="player"></audio>
 
+    <div class="player-left">
+      <div id="p-img-wrapper" class="p-img-wrapper is-placeholder">
+        <img id="p-img" class="p-img" alt="Ảnh bài hát">
+        <div class="p-img-placeholder" aria-hidden="true">
+          <i class="fas fa-music"></i>
+        </div>
+      </div>
+      <div class="p-info">
+        <div id="p-title" class="p-title">Chưa chọn bài hát</div>
+        <div id="p-artist" class="p-artist">Nghệ sĩ</div>
+      </div>
+    </div>
 
+    <div class="player-center">
+      <div class="main-controls">
+        <button class="sub-btn"><i class="fas fa-random"></i></button>
+        <button class="sub-btn" onclick="prevSong()"><i class="fas fa-step-backward"></i></button>
+        <button class="play-main-btn" id="mainPlayBtn" onclick="togglePlay()">
+          <i class="fas fa-play"></i>
+        </button>
+        <button class="sub-btn" onclick="nextSong()"><i class="fas fa-step-forward"></i></button>
+        <button class="sub-btn" onclick="replaySong()"><i class="fas fa-redo"></i></button>
+      </div>
 
-  <!-- EDIT MODAL -->
-<div id="editModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:2000; justify-content:center; align-items:center;">
+      <div class="progress-area">
+        <span id="currentTime">00:00</span>
+        <div class="progress-bar-container" id="progressWrapper">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <span id="duration">00:00</span>
+      </div>
+    </div>
 
-  <div style="background:#181818; padding:25px; border-radius:10px; width:400px;">
-    <h3 style="margin-bottom:15px;">✏️ Sửa bài hát</h3>
-
-    <input type="text" id="editTitle" placeholder="Tên bài hát" style="width:100%; margin-bottom:10px; padding:10px;">
-    <input type="text" id="editArtist" placeholder="Tên ca sĩ" style="width:100%; margin-bottom:10px; padding:10px;">
-
-    <label>File nhạc mới:</label>
-    <input type="file" id="editFile" style="margin-bottom:10px;">
-
-    <label>Ảnh mới:</label>
-    <input type="file" id="editImage" style="margin-bottom:15px;">
-
-    <div style="display:flex; justify-content:space-between;">
-      <button onclick="submitEdit()" style="background:#1db954; padding:10px 15px; border:none; border-radius:5px;">Lưu</button>
-      <button onclick="closeModal()" style="background:#444; padding:10px 15px; border:none; border-radius:5px;">Hủy</button>
+    <div class="player-right">
+      <span class="quality-badge">128 kbps</span>
+      <i class="fas fa-volume-up"></i>
+      <input type="range" id="volumeSlider" min="0" max="1" step="0.1" value="1" oninput="changeVolume(this.value)">
+      <i class="fas fa-list"></i>
     </div>
   </div>
 
-</div>
+  <div id="editModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:2000; justify-content:center; align-items:center;">
+    <div style="background:#181818; padding:25px; border-radius:10px; width:400px;">
+      <h3 style="margin-bottom:15px;">Sửa bài hát</h3>
 
- <script src="/static/script.js"></script>
+      <input type="text" id="editTitle" placeholder="Tên bài hát" style="width:100%; margin-bottom:10px; padding:10px;">
+      <input type="text" id="editArtist" placeholder="Tên ca sĩ" style="width:100%; margin-bottom:10px; padding:10px;">
+
+      <label>File nhạc mới:</label>
+      <input type="file" id="editFile" style="margin-bottom:10px;">
+
+      <label>Ảnh mới:</label>
+      <input type="file" id="editImage" style="margin-bottom:15px;">
+
+      <div style="display:flex; justify-content:space-between;">
+        <button onclick="submitEdit()" style="background:#1db954; padding:10px 15px; border:none; border-radius:5px;">Lưu</button>
+        <button onclick="closeModal()" style="background:#444; padding:10px 15px; border:none; border-radius:5px;">Hủy</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/script.js"></script>
 </body>
 </html>
