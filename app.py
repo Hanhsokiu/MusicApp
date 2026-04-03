@@ -1,4 +1,5 @@
 import os
+import re
 import time
 
 import flask
@@ -38,6 +39,13 @@ def get_list_result(cursor):
     for value in cursor.fetchall():
         results.append(dict(zip(keys, value)))
     return results
+
+
+def build_download_name(song):
+    extension = os.path.splitext(song.fileUrl or "")[1] or ".mp3"
+    raw_name = f"{song.title} - {song.artist}{extension}"
+    sanitized = re.sub(r'[\\/:*?"<>|]+', "_", raw_name).strip()
+    return sanitized or f"song{extension}"
 
 
 @app.route('/api/songs', methods=['GET'])
@@ -443,6 +451,27 @@ def add_song_to_playlist(playlist_id):
     except Exception as e:
         print(e)
         return get_response({"error": "Không thêm được bài hát vào playlist"}, 500)
+
+
+@app.route('/api/songs/<id>/download', methods=['GET'])
+def download_song(id):
+    try:
+        cursor = conn.cursor()
+        cursor.execute("select title, artist, fileUrl from Songs where id = ?", id)
+        song = cursor.fetchone()
+        if not song or not song.fileUrl:
+            return get_response({"error": "Song not found"}, 404)
+
+        stored_filename = song.fileUrl.replace("/uploads/", "", 1)
+        return flask.send_from_directory(
+            UPLOAD_FOLDER,
+            stored_filename,
+            as_attachment=True,
+            download_name=build_download_name(song)
+        )
+    except Exception as e:
+        print(e)
+        return get_response({"error": "KhÃ´ng táº£i Ä‘Æ°á»£c bÃ i hÃ¡t"}, 500)
 
 
 @app.route('/uploads/<filename>', methods=['GET'])

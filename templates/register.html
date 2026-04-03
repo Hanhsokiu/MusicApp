@@ -1,110 +1,343 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
-  <meta charset="UTF-8">
-  <title>Đăng ký</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng ký</title>
 
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <!-- Font + Icon -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Poppins', sans-serif;
-      background: linear-gradient(135deg, #121212, #1db954);
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      color: white;
-    }
+    <style>
+        :root {
+            --primary: #10b981;
+            --primary-glow: rgba(16, 185, 129, 0.4);
+            --secondary: #6366f1;
+            --bg-dark: #030712;
+            --card-glass: rgba(17, 24, 39, 0.7);
+            --border-glass: rgba(255, 255, 255, 0.1);
+            --text-main: #f9fafb;
+            --text-muted: #9ca3af;
+        }
 
-    .card {
-      background: #181818;
-      padding: 40px;
-      border-radius: 16px;
-      width: 350px;
-      text-align: center;
-    }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
-    input {
-      width: 100%;
-      padding: 12px;
-      margin-bottom: 15px;
-      border-radius: 10px;
-      border: none;
-      background: #2a2a2a;
-      color: white;
-    }
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-dark);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--text-main);
+            overflow: hidden;
+            position: relative;
+        }
 
-    button {
-      width: 100%;
-      padding: 12px;
-      border-radius: 30px;
-      border: none;
-      background: #1db954;
-      font-weight: bold;
-      cursor: pointer;
-    }
+        /* --- Animated Mesh Gradient & Noise Background --- */
+        .mesh-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            background:
+                radial-gradient(circle at 10% 10%, rgba(16, 185, 129, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 90% 90%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.05) 0%, transparent 60%);
+            animation: meshFlow 20s ease-in-out infinite alternate;
+        }
 
-    button:hover {
-      background: #1ed760;
-    }
+        @keyframes meshFlow {
+            0% { transform: scale(1) translate(0, 0); }
+            100% { transform: scale(1.1) translate(2%, 2%); }
+        }
 
-    .link {
-      margin-top: 10px;
-      cursor: pointer;
-      color: #aaa;
-    }
-  </style>
+        /* Noise Texture overlay */
+        .noise::before {
+            content: "";
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            z-index: -1;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            opacity: 0.03;
+            pointer-events: none;
+        }
+
+        /* --- Registration Card --- */
+        .register-card {
+            position: relative;
+            background: var(--card-glass);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--border-glass);
+            padding: 60px 50px;
+            border-radius: 32px;
+            width: 440px;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            animation: cardEntrance 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+            transform: scale(0.95) translateY(20px);
+        }
+
+        @keyframes cardEntrance {
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        /* Moving Light (Border Beam) */
+        .register-card::after {
+            content: "";
+            position: absolute;
+            inset: -1px;
+            border-radius: 32px;
+            padding: 2px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            animation: beam 4s linear infinite;
+            pointer-events: none;
+            opacity: 0.5;
+        }
+
+        @keyframes beam {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        .logo-visual {
+            font-size: 3.5rem;
+            margin-bottom: 24px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-block;
+            filter: drop-shadow(0 0 10px var(--primary-glow));
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--text-main);
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            margin-bottom: 40px;
+            font-size: 0.95rem;
+        }
+
+        /* --- Floating Label Inputs --- */
+        .input-group {
+            position: relative;
+            margin-bottom: 28px;
+            text-align: left;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 16px 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1.5px solid var(--border-glass);
+            border-radius: 16px;
+            color: var(--text-main);
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .input-group label {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            font-size: 0.95rem;
+        }
+
+        /* Floating effect on focus or when not empty */
+        .input-group input:focus ~ label,
+        .input-group input:not(:placeholder-shown) ~ label {
+            top: -10px;
+            left: 12px;
+            font-size: 0.8rem;
+            color: var(--primary);
+            background: var(--bg-dark);
+            padding: 0 8px;
+            border-radius: 4px;
+        }
+
+        .input-group input:focus {
+            border-color: var(--primary);
+            background: rgba(16, 185, 129, 0.05);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.1);
+        }
+
+        /* --- Premium Button with Shimmer --- */
+        .btn-premium {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 16px;
+            background: linear-gradient(135deg, var(--primary), #059669);
+            color: white;
+            font-weight: 600;
+            font-size: 1.05rem;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s ease;
+            box-shadow: 0 10px 20px -5px rgba(16, 185, 129, 0.4);
+            margin-top: 10px;
+        }
+
+        /* Shimmer effect overlay */
+        .btn-premium::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.2),
+                transparent
+            );
+            transition: all 0.6s;
+        }
+
+        .btn-premium:hover::before {
+            left: 100%;
+        }
+
+        .btn-premium:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 20px 30px -10px rgba(16, 185, 129, 0.5);
+            filter: brightness(1.1);
+        }
+
+        .btn-premium:active {
+            transform: translateY(-1px) scale(0.98);
+        }
+
+        /* --- Footer Links --- */
+        .footer-links {
+            margin-top: 32px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .footer-links span {
+            color: var(--primary);
+            font-weight: 600;
+            cursor: pointer;
+            transition: color 0.3s;
+            text-decoration: none;
+        }
+
+        .footer-links span:hover {
+            text-decoration: underline;
+            color: #34d399;
+        }
+
+        /* Staggered load animation delay */
+        .stagger-1 { animation-delay: 0.1s; opacity: 0; animation: fadeIn 0.8s forwards; }
+        .stagger-2 { animation-delay: 0.2s; opacity: 0; animation: fadeIn 0.8s forwards; }
+        .stagger-3 { animation-delay: 0.3s; opacity: 0; animation: fadeIn 0.8s forwards; }
+        .stagger-4 { animation-delay: 0.4s; opacity: 0; animation: fadeIn 0.8s forwards; }
+        .stagger-5 { animation-delay: 0.5s; opacity: 0; animation: fadeIn 0.8s forwards; }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+    </style>
 </head>
 
-<body>
+<body class="noise">
 
-<div class="card">
-  <h2>📝 Đăng ký</h2>
+    <div class="mesh-bg"></div>
 
-  <input type="text" id="username" placeholder="Username">
-  <input type="password" id="password" placeholder="Password">
+    <div class="register-card">
+        <div class="logo-visual stagger-1">
+            <i class="fas fa-user-plus"></i>
+        </div>
+        <h2 class="stagger-2">Tạo tài khoản mới</h2>
+        <p class="subtitle stagger-3">Hãy bắt đầu hành trình âm nhạc của bạn</p>
 
-  <button onclick="register()">Đăng ký</button>
+        <div class="input-group stagger-4">
+            <input type="text" id="username" placeholder=" " required>
+            <label for="username">Tên đăng ký</label>
+        </div>
 
-  <div class="link" onclick="goLogin()">Đã có tài khoản? Đăng nhập</div>
-</div>
+        <div class="input-group stagger-4">
+            <input type="password" id="password" placeholder=" " required>
+            <label for="password">Mật khẩu mới</label>
+        </div>
 
-<script>
-const API_URL = "http://127.0.0.1:5000";
+        <button class="btn-premium stagger-5" onclick="register()">Đăng ký ngay</button>
 
-function register() {
-  const username = document.getElementById("username").value;
-  const password = document.getElementById("password").value;
+        <div class="footer-links stagger-5">
+            Đã có tài khoản? <span onclick="goLogin()">Đăng nhập tại đây</span>
+        </div>
+    </div>
 
-  if (!username || !password) {
-    alert("Nhập đầy đủ!");
-    return;
-  }
+    <script>
+        const API_URL = "http://127.0.0.1:5000";
 
-  fetch(API_URL + "/api/register", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ username, password })
-  })
-  .then(res => res.json())
-  .then(data => {
-    if (data.message) {
-      alert("Đăng ký thành công!");
-      window.location.href = "/login";
-    } else {
-      alert(data.error);
-    }
-  });
-}
+        function register() {
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
 
-function goLogin() {
-  window.location.href = "/login";
-}
-</script>
+            if (!username || !password) {
+                alert("Nhập đầy đủ!");
+                return;
+            }
+
+            fetch(API_URL + "/api/register", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ username, password })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.message) {
+                    alert("Đăng ký thành công!");
+                    window.location.href = "/login";
+                } else {
+                    alert(data.error);
+                }
+            })
+            .catch(err => console.error(err));
+        }
+
+        function goLogin() {
+            window.location.href = "/login";
+        }
+    </script>
 
 </body>
+
 </html>

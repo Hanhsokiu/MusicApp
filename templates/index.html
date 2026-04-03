@@ -109,6 +109,9 @@
 
     <div class="player-right">
       <span class="quality-badge">128 kbps</span>
+      <button id="playerDownloadBtn" class="player-icon-btn" onclick="downloadSong(currentSongId)" title="Chọn bài hát để tải" disabled>
+        <i class="fas fa-download"></i>
+      </button>
       <i class="fas fa-volume-up"></i>
       <input type="range" id="volumeSlider" min="0" max="1" step="0.1" value="1" oninput="changeVolume(this.value)">
       <i class="fas fa-list"></i>
@@ -135,6 +138,19 @@
     </div>
   </div>
 
+  <div id="playlistPickerModal" class="playlist-picker-modal">
+    <div class="playlist-picker-card">
+      <div class="playlist-picker-header">
+        <h3>Chọn playlist</h3>
+        <button class="playlist-picker-close" onclick="closePlaylistPicker()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div id="playlistPickerBody" class="playlist-picker-body"></div>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="/static/script.js"></script>
 </body>
 </html>
