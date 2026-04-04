@@ -556,6 +556,11 @@ body {
     color: var(--text-main);
 }
 
+.sub-btn.active {
+    color: var(--primary-color);
+    filter: drop-shadow(0 0 8px var(--primary-glow));
+}
+
 .progress-area {
     width: 100%;
     max-width: 600px;

@@ -1,4 +1,4 @@
-from MusicApp.models.database import get_connection
+from models.database import get_connection
 
 
 def get_favorite(user_id, song_id):

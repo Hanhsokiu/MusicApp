@@ -3,7 +3,7 @@ import pyodbc
 
 CN_STR = (
     "DRIVER={ODBC Driver 17 for SQL Server};"
-    "SERVER=LAPTOP-23HSO403\\SQLEXPRESS;"
+    "SERVER=DESKTOP-OF-HANH\\SQLEXPRESS;"
     "DATABASE=MusicApp;"
     "Trusted_Connection=yes;"
 )

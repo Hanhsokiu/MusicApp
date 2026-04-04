@@ -29,7 +29,15 @@ def search_songs(query):
     conn = get_connection()
     try:
         cursor = conn.cursor()
-        cursor.execute("select * from Songs where title like ?", "%" + query + "%")
+        keyword = "%" + query + "%"
+        cursor.execute(
+            """
+            select *
+            from Songs
+            where title like ? or artist like ?
+            """,
+            (keyword, keyword),
+        )
         return _rows_to_dicts(cursor)
     finally:
         conn.close()

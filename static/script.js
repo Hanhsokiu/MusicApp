@@ -10,6 +10,7 @@ let ten_playlist_da_chon = "";
 let ma_bai_hat_dang_sua = null;
 let ma_bai_hat_cho_playlist = null;
 let ma_bai_hat_hien_tai = null;
+let che_do_lap_bai = false;
 
 $(document).ready(function () {
   if (!nguoi_dung) {
@@ -262,6 +263,16 @@ function prevSong() {
   playByIndex(vi_tri_truoc);
 }
 
+function toggleRepeatSong() {
+  che_do_lap_bai = !che_do_lap_bai;
+
+  $("#repeatSongBtn").toggleClass("active", che_do_lap_bai);
+  $("#repeatSongBtn").attr(
+    "title",
+    che_do_lap_bai ? "Tat lap bai hien tai" : "Bat lap bai hien tai"
+  );
+}
+
 function replaySong() {
   if (!trinh_phat) {
     return;
@@ -289,6 +300,13 @@ function gan_su_kien_trinh_phat() {
   });
 
   $("#player").on("ended", function () {
+    if (che_do_lap_bai) {
+      trinh_phat.currentTime = 0;
+      trinh_phat.play();
+      $("#mainPlayBtn").html('<i class="fas fa-pause"></i>');
+      return;
+    }
+
     nextSong();
   });
 

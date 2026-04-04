@@ -89,7 +89,9 @@
 
     <div class="player-center">
       <div class="main-controls">
-        <button class="sub-btn"><i class="fas fa-random"></i></button>
+        <button class="sub-btn" id="repeatSongBtn" onclick="toggleRepeatSong()" title="Bat lap bai hien tai">
+          <i class="fas fa-repeat"></i>
+        </button>
         <button class="sub-btn" onclick="prevSong()"><i class="fas fa-step-backward"></i></button>
         <button class="play-main-btn" id="mainPlayBtn" onclick="togglePlay()">
           <i class="fas fa-play"></i>
